@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --reset: #64748b;
+            --bg: #f1f5f9;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .dashboard {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        h1 { margin: 0; color: #1e293b; font-size: 1.5rem; }
+        
+        .controls { display: flex; gap: 10px; }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-start { background-color: var(--success); }
+        .btn-reset { background-color: var(--reset); }
+        button:hover { opacity: 0.9; }
+
+        .results-container {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 5px solid #e2e8f0;
+            animation: slideIn 0.3s ease-out;
+        }
+        .result-item.winner {
+            border-left-color: #fbbf24;
+            background: #fffbeb;
+        }
+        .rank {
+            font-size: 1.2rem;
+            font-weight: 700;
+            width: 40px;
+            color: #64748b;
+        }
+        .name { flex-grow: 1; font-weight: 500; font-size: 1.1rem; }
+        .time { color: #94a3b8; font-family: monospace; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="header">
+            <h1>Teacher Dashboard</h1>
+            <div class="controls">
+                <button class="btn-start" onclick="startGame()">เริ่มแข่ง</button>
+                <button class="btn-reset" onclick="resetGame()">รีเซต</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div id="results-list">
+                <!-- รายชื่อจะเด้งขึ้นตรงนี้ -->
+                <p style="text-align:center; color:#94a3b8;">รอคนกดปุ่ม...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        function startGame() {
+            socket.emit('start_game');
+        }
+
+        function resetGame() {
+            socket.emit('reset_game');
+        }
+
+        socket.on('update_results', (results) => {
+            const list = document.getElementById('results-list');
+            list.innerHTML = "";
+            
+            results.forEach((r, index) => {
+                const item = document.createElement('div');
+                item.className = `result-item ${index === 0 ? 'winner' : ''}`;
+                
+                const timeStr = new Date(r.time).toISOString().substr(11, 12);
+                
+                item.innerHTML = `
+                    <div class="rank">${index + 1}</div>
+                    <div class="name">${r.name} ${index === 0 ? '🏆' : ''}</div>
+                    <div class="time">${timeStr}</div>
+                `;
+                list.appendChild(item);
+            });
+        });
+
+        socket.on('reset_all', () => {
+            document.getElementById('results-list').innerHTML = '<p style="text-align:center; color:#94a3b8;">รีเซตแล้ว รอคนกดใหม่...</p>';
+        });
+    </script>
+</body>
+</html>
